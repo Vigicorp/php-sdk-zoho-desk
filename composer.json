@@ -35,9 +35,8 @@
         "php": "^7.4||^8.0",
         "ext-curl": "*",
         "ext-json": "*",
-        "ext-mbstring": "*"
-    },
-    "require-dev": {
+        "ext-mbstring": "*",
+        "cardinalby/content-disposition": "^1.1"
     },
     "autoload": {
         "psr-4": {

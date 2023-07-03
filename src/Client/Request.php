@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace Zoho\Desk\Client;
 
+use cardinalby\ContentDisposition\ContentDisposition;
 use Zoho\Desk\Exception\InvalidRequestException;
 use function curl_errno;
 use function curl_error;
@@ -45,7 +46,24 @@ final class Request implements RequestInterface
         $responseInfo = curl_getinfo($this->curlResource);
         $responseCode = curl_getinfo($this->curlResource, CURLINFO_HTTP_CODE);
         $headerSize = curl_getinfo($this->curlResource, CURLINFO_HEADER_SIZE);
-        $body = json_decode(mb_substr($response, $headerSize), true) ?: [];
+        $contentType = curl_getinfo($this->curlResource, CURLINFO_CONTENT_TYPE);
+
+        $body = [];
+        if (strpos($contentType, 'application/json')) {
+            $body = json_decode(mb_substr($response, $headerSize), true) ?: [];
+        } else {
+
+            $headers = $this->getHeaders(substr($response, 0, $headerSize));
+
+            $contentDispositionParsed = ContentDisposition::parse($headers['content-disposition']);
+            $fileName = 'document-'.uniqid();
+            if(array_key_exists('filename*', $contentDispositionParsed->getParameters()) && !empty($contentDispositionParsed->getFilename())){
+                $fileName = $contentDispositionParsed->getFilename();
+            }
+            $body['content'] = mb_substr($response, $headerSize);
+            $body['filename'] = $fileName;
+
+        }
         curl_close($this->curlResource);
 
         if (!$responseInfo || $responseCode >= 400) {
@@ -53,6 +71,21 @@ final class Request implements RequestInterface
         }
 
         return new Response($body, $responseInfo);
+    }
+
+    private function getHeaders($headerText)
+    {
+        foreach (explode("\r\n", $headerText) as $i => $line) {
+            if ($i === 0) {
+                $headers['http_code'] = $line;
+            } elseif (!empty(trim($line))) {
+                list ($key, $value) = explode(': ', $line);
+
+                $headers[$key] = $value;
+            }
+        }
+
+        return $headers;
     }
 
     private function buildErrorMessage(array $body): string
