@@ -49,20 +49,19 @@ final class Request implements RequestInterface
         $contentType = curl_getinfo($this->curlResource, CURLINFO_CONTENT_TYPE);
 
         $body = [];
-        if ($contentType) {
-            if (strpos($contentType, 'application/json') !== false) {
-                $body = json_decode(mb_substr($response, $headerSize), true) ?: [];
-            } else {
+        if (strpos($contentType, 'application/json') !== false) {
+            $body = json_decode(mb_substr($response, $headerSize), true) ?: [];
+        } else {
 
-                $headers = $this->getHeaders(substr($response, 0, $headerSize));
+            $headers = $this->getHeaders(substr($response, 0, $headerSize));
 
-                $contentDispositionParsed = ContentDisposition::parse($headers['content-disposition']);
-                $fileName = 'document-' . uniqid();
-                if (array_key_exists('filename*', $contentDispositionParsed->getParameters()) && !empty($contentDispositionParsed->getFilename())) {
-                    $fileName = $contentDispositionParsed->getFilename();
-                }
-                $body['content'] = mb_substr($response, $headerSize);
-                $body['filename'] = $fileName;
+            $contentDispositionParsed = ContentDisposition::parse(str_replace(' ', '-',$headers['content-disposition']));
+            $fileName = 'document-'.uniqid();
+            if(array_key_exists('filename*', $contentDispositionParsed->getParameters()) && !empty($contentDispositionParsed->getFilename())){
+                $fileName = $contentDispositionParsed->getFilename();
+            }
+            $body['content'] = mb_substr($response, $headerSize);
+            $body['filename'] = $fileName;
             }
         }
         curl_close($this->curlResource);
