@@ -49,6 +49,7 @@ final class Request implements RequestInterface
         $contentType = curl_getinfo($this->curlResource, CURLINFO_CONTENT_TYPE);
 
         $body = [];
+        if($contentType){
         if (strpos($contentType, 'application/json') !== false) {
             $body = json_decode(mb_substr($response, $headerSize), true) ?: [];
         } else {
