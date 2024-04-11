@@ -61,7 +61,7 @@ final class Request implements RequestInterface
             if(array_key_exists('filename*', $contentDispositionParsed->getParameters()) && !empty($contentDispositionParsed->getFilename())){
                 $fileName = $contentDispositionParsed->getFilename();
             }
-            $body['content'] = mb_substr($response, $headerSize);
+            $body['content'] = substr($response, $headerSize);
             $body['filename'] = $fileName;
             }
         }
